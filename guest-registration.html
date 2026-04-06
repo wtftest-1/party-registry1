@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guest Registration — An Evening to Remember</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a84c; --gold-light: #e8c97a; --gold-dim: rgba(201,168,76,0.15);
+    --black: #080808; --dark: #111111; --card: #161616;
+    --border: rgba(201,168,76,0.25); --text: #e8e0d0; --muted: rgba(232,224,208,0.45);
+  }
+  body {
+    font-family: 'Montserrat', sans-serif; background: var(--black); color: var(--text);
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 40px 24px; overflow-x: hidden;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,168,76,0.10) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 80% 110%, rgba(201,168,76,0.06) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+  .wrapper { position: relative; z-index: 1; width: 100%; max-width: 540px; }
+  header { text-align: center; margin-bottom: 40px; animation: fadeDown 0.7s ease both; }
+  @keyframes fadeDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(12px);  } to { opacity:1; transform:translateY(0); } }
+  @keyframes spin     { to { transform: rotate(360deg); } }
+  .event-label {
+    font-size: 9px; font-weight: 600; letter-spacing: 0.4em; color: var(--gold);
+    text-transform: uppercase; display: block; margin-bottom: 16px;
+  }
+  h1 { font-family:'Cormorant Garamond',serif; font-size:clamp(2rem,6vw,3.4rem); font-weight:300; letter-spacing:0.06em; line-height:1.15; }
+  h1 em { font-style:italic; color:var(--gold-light); }
+  .header-line { width:50px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:20px auto 0; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:2px; padding:44px 48px; animation:fadeUp 0.7s 0.15s ease both; }
+  .card-title { font-family:'Cormorant Garamond',serif; font-size:1.5rem; font-weight:300; letter-spacing:0.04em; margin-bottom:6px; }
+  .card-sub { font-size:10px; color:var(--muted); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:36px; }
+  .field { margin-bottom:22px; }
+  label { display:block; font-size:9px; font-weight:600; letter-spacing:0.25em; text-transform:uppercase; color:var(--gold); margin-bottom:10px; }
+  input, select {
+    width:100%; background:var(--dark); border:1px solid var(--border); border-radius:1px;
+    padding:13px 16px; font-family:'Montserrat',sans-serif; font-size:13px; color:var(--text);
+    outline:none; transition:border-color 0.2s, box-shadow 0.2s; appearance:none;
+  }
+  input::placeholder { color:var(--muted); }
+  input:focus, select:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(201,168,76,0.08); }
+  input.invalid { border-color:rgba(200,80,80,0.5); }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .field-error { font-size:10px; color:#e07070; letter-spacing:0.05em; margin-top:6px; display:none; }
+  .field-error.show { display:block; }
+  .btn-submit {
+    width:100%; padding:15px; background:var(--gold); color:var(--black); border:none; border-radius:1px;
+    font-family:'Montserrat',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.32em;
+    text-transform:uppercase; cursor:pointer; margin-top:8px; transition:all 0.2s;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  .btn-submit:hover:not(:disabled) { background:var(--gold-light); transform:translateY(-1px); }
+  .btn-submit:disabled { opacity:0.6; cursor:not-allowed; }
+  .spinner { width:14px; height:14px; border:2px solid rgba(0,0,0,0.3); border-top-color:var(--black); border-radius:50%; animation:spin 0.7s linear infinite; display:none; }
+  .btn-submit.loading .spinner { display:block; }
+  .toast { display:none; align-items:flex-start; gap:14px; background:rgba(201,168,76,0.10); border:1px solid var(--gold); border-radius:2px; padding:18px 20px; margin-top:20px; }
+  .toast.show { display:flex; animation:fadeUp 0.3s ease; }
+  .toast-icon { font-size:18px; flex-shrink:0; margin-top:1px; }
+  .toast-title { font-size:11px; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold); margin-bottom:4px; }
+  .toast-msg { font-size:12px; color:var(--text); letter-spacing:0.03em; line-height:1.5; }
+  .error-toast { display:none; align-items:center; gap:12px; background:rgba(220,80,80,0.08); border:1px solid rgba(220,80,80,0.3); border-radius:2px; padding:14px 18px; margin-top:16px; font-size:11px; color:#e07070; letter-spacing:0.05em; }
+  .error-toast.show { display:flex; animation:fadeUp 0.3s ease; }
+  footer { text-align:center; margin-top:32px; font-size:10px; color:var(--muted); letter-spacing:0.15em; text-transform:uppercase; animation:fadeUp 0.7s 0.3s ease both; }
+  @media (max-width:560px) { .card { padding:28px 22px; } .field-row { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <span class="event-label">Exclusive Event · 2026</span>
+    <h1>An <em>Evening</em><br>to Remember</h1>
+    <div class="header-line"></div>
+  </header>
+
+  <div class="card">
+    <div class="card-title">Reserve Your Place</div>
+    <div class="card-sub">Complete the form to confirm your attendance</div>
+
+    <div class="field">
+      <label>Full Name *</label>
+      <input type="text" id="reg-name" placeholder="First and last name" autocomplete="name">
+      <div class="field-error" id="err-name">Please enter your full name.</div>
+    </div>
+    <div class="field">
+      <label>Email Address *</label>
+      <input type="email" id="reg-email" placeholder="your@email.com" autocomplete="email">
+      <div class="field-error" id="err-email">Please enter a valid email address.</div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Phone Number</label>
+        <input type="tel" id="reg-phone" placeholder="+1 (000) 000-0000" autocomplete="tel">
+      </div>
+      <div class="field">
+        <label>Party Size *</label>
+        <select id="reg-party">
+          <option value="1">Just me (1)</option>
+          <option value="2">2 guests</option>
+          <option value="3">3 guests</option>
+          <option value="4">4 guests</option>
+          <option value="5">5 guests</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn-submit" id="submit-btn" onclick="registerGuest()">
+      <div class="spinner"></div>
+      <span id="btn-text">Confirm Registration</span>
+    </button>
+
+    <div class="toast" id="toast">
+      <span class="toast-icon">✦</span>
+      <div>
+        <div class="toast-title">Registration Confirmed</div>
+        <div class="toast-msg" id="toast-msg">We look forward to seeing you.</div>
+      </div>
+    </div>
+    <div class="error-toast" id="error-toast">
+      ⚠ Something went wrong. Please check your connection and try again.
+    </div>
+  </div>
+
+  <footer>Entrance subject to confirmed registration</footer>
+</div>
+
+<script>
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlITBlVboF1t-HHvH8WngECIFg4qw_DY1aczXKKA1GNaIL5K6f6dMTWq-KoC2uboMl/exec';
+
+  function validate() {
+    let ok = true;
+    const name = document.getElementById('reg-name');
+    const errName = document.getElementById('err-name');
+    if (!name.value.trim() || name.value.trim().length < 2) {
+      name.classList.add('invalid'); errName.classList.add('show'); ok = false;
+    } else { name.classList.remove('invalid'); errName.classList.remove('show'); }
+
+    const email = document.getElementById('reg-email');
+    const errEmail = document.getElementById('err-email');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+      email.classList.add('invalid'); errEmail.classList.add('show'); ok = false;
+    } else { email.classList.remove('invalid'); errEmail.classList.remove('show'); }
+
+    return ok;
+  }
+
+  async function registerGuest() {
+    if (!validate()) return;
+    const btn = document.getElementById('submit-btn');
+    const btnText = document.getElementById('btn-text');
+    document.getElementById('error-toast').classList.remove('show');
+    btn.disabled = true; btn.classList.add('loading'); btnText.textContent = 'Submitting…';
+
+    const guest = {
+      id: Date.now(),
+      name:  document.getElementById('reg-name').value.trim(),
+      email: document.getElementById('reg-email').value.trim(),
+      phone: document.getElementById('reg-phone').value.trim(),
+      party: parseInt(document.getElementById('reg-party').value),
+      registeredAt: new Date().toLocaleString()
+    };
+
+    try {
+      await fetch(SCRIPT_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(guest)
+      });
+
+      ['reg-name','reg-email','reg-phone'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('reg-party').value = '1';
+
+      document.getElementById('toast-msg').textContent =
+        `Thank you, ${guest.name}. ${guest.party > 1 ? `Your group of ${guest.party} has been registered.` : 'Your spot is reserved.'} We look forward to welcoming you.`;
+      document.getElementById('toast').classList.add('show');
+      setTimeout(() => document.getElementById('toast').classList.remove('show'), 6000);
+
+      btnText.textContent = 'Registered ✓';
+      setTimeout(() => { btnText.textContent = 'Confirm Registration'; btn.disabled = false; btn.classList.remove('loading'); }, 4000);
+
+    } catch(err) {
+      document.getElementById('error-toast').classList.add('show');
+      btn.disabled = false; btn.classList.remove('loading'); btnText.textContent = 'Confirm Registration';
+    }
+  }
+
+  document.getElementById('reg-name').addEventListener('blur', validate);
+  document.getElementById('reg-email').addEventListener('blur', validate);
+</script>
+</body>
+</html>
