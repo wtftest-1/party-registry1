@@ -155,7 +155,7 @@
     for (let i = 1; i <= count; i++) companions.push({ name: document.getElementById('comp-name-' + i).value.trim(), email: document.getElementById('comp-email-' + i).value.trim() });
     const guest = { id: Date.now(), name: document.getElementById('reg-name').value.trim(), email: document.getElementById('reg-email').value.trim(), phone: document.getElementById('reg-phone').value.trim(), party: count + 1, companions, registeredAt: new Date().toLocaleString() };
     try {
-      const response = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(guest) });
+      const response = await fetch(SCRIPT_URL, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(guest) });
       const result = await response.json();
       if (result.error === 'duplicate') {
         document.getElementById('duplicate-toast').classList.add('show');
