@@ -23,7 +23,7 @@
                 radial-gradient(ellipse 60% 40% at 80% 110%, rgba(201,168,76,0.06) 0%, transparent 50%);
     pointer-events: none; z-index: 0;
   }
-  .wrapper { position: relative; z-index: 1; width: 100%; max-width: 540px; }
+  .wrapper { position: relative; z-index: 1; width: 100%; max-width: 580px; }
   header { text-align: center; margin-bottom: 40px; animation: fadeDown 0.7s ease both; }
   @keyframes fadeDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
   @keyframes fadeUp   { from { opacity:0; transform:translateY(12px);  } to { opacity:1; transform:translateY(0); } }
@@ -44,6 +44,28 @@
   .field-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   .field-error { font-size:10px; color:#e07070; letter-spacing:0.05em; margin-top:6px; display:none; }
   .field-error.show { display:block; }
+
+  /* Companions */
+  .companions-wrap { margin-top: 4px; }
+  .companion-block {
+    background: rgba(201,168,76,0.05);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 20px;
+    margin-bottom: 14px;
+    animation: fadeUp 0.3s ease;
+  }
+  .companion-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 14px; display: block;
+  }
+
+  .section-divider {
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 28px 0;
+  }
+
   .btn-submit { width:100%; padding:15px; background:var(--gold); color:var(--black); border:none; border-radius:1px; font-family:'Montserrat',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.32em; text-transform:uppercase; cursor:pointer; margin-top:8px; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:10px; }
   .btn-submit:hover:not(:disabled) { background:var(--gold-light); transform:translateY(-1px); }
   .btn-submit:disabled { opacity:0.6; cursor:not-allowed; }
@@ -72,6 +94,7 @@
     <div class="card-title">Reserve Your Place</div>
     <div class="card-sub">Complete the form to confirm your attendance</div>
 
+    <!-- MAIN GUEST -->
     <div class="field">
       <label>Full Name *</label>
       <input type="text" id="reg-name" placeholder="First and last name" autocomplete="name">
@@ -88,16 +111,21 @@
         <input type="tel" id="reg-phone" placeholder="+1 (000) 000-0000" autocomplete="tel">
       </div>
       <div class="field">
-        <label>Party Size *</label>
-        <select id="reg-party">
-          <option value="1">Just me (1)</option>
-          <option value="2">2 guests</option>
-          <option value="3">3 guests</option>
-          <option value="4">4 guests</option>
-          <option value="5">5 guests</option>
+        <label>Number of Companions *</label>
+        <select id="reg-party" onchange="updateCompanions()">
+          <option value="0">Coming alone</option>
+          <option value="1">+ 1 companion</option>
+          <option value="2">+ 2 companions</option>
+          <option value="3">+ 3 companions</option>
+          <option value="4">+ 4 companions</option>
         </select>
       </div>
     </div>
+
+    <!-- COMPANION FIELDS -->
+    <div class="companions-wrap" id="companions-wrap"></div>
+
+    <div class="section-divider"></div>
 
     <button class="btn-submit" id="submit-btn" onclick="registerGuest()">
       <div class="spinner"></div>
@@ -122,6 +150,26 @@
 <script>
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwW4k4nLsPAP-880VN-bQIe5jqeIDZ6TxdOnFi95LnfXSha8IQhoReFCZvzaLzR-kub/exec';
 
+  function updateCompanions() {
+    const count = parseInt(document.getElementById('reg-party').value);
+    const wrap = document.getElementById('companions-wrap');
+    wrap.innerHTML = '';
+    for (let i = 1; i <= count; i++) {
+      wrap.innerHTML += `
+        <div class="companion-block">
+          <span class="companion-label">Companion ${i}</span>
+          <div class="field">
+            <label>Full Name *</label>
+            <input type="text" id="comp-name-${i}" placeholder="First and last name">
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Email Address *</label>
+            <input type="email" id="comp-email-${i}" placeholder="companion@email.com">
+          </div>
+        </div>`;
+    }
+  }
+
   function validate() {
     let ok = true;
     const name = document.getElementById('reg-name');
@@ -129,11 +177,21 @@
     if (!name.value.trim() || name.value.trim().length < 2) {
       name.classList.add('invalid'); errName.classList.add('show'); ok = false;
     } else { name.classList.remove('invalid'); errName.classList.remove('show'); }
+
     const email = document.getElementById('reg-email');
     const errEmail = document.getElementById('err-email');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
       email.classList.add('invalid'); errEmail.classList.add('show'); ok = false;
     } else { email.classList.remove('invalid'); errEmail.classList.remove('show'); }
+
+    // Validate companions
+    const count = parseInt(document.getElementById('reg-party').value);
+    for (let i = 1; i <= count; i++) {
+      const cn = document.getElementById(`comp-name-${i}`);
+      const ce = document.getElementById(`comp-email-${i}`);
+      if (!cn.value.trim()) { cn.classList.add('invalid'); ok = false; } else { cn.classList.remove('invalid'); }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ce.value.trim())) { ce.classList.add('invalid'); ok = false; } else { ce.classList.remove('invalid'); }
+    }
     return ok;
   }
 
@@ -144,28 +202,39 @@
     document.getElementById('error-toast').classList.remove('show');
     btn.disabled = true; btn.classList.add('loading'); btnText.textContent = 'Submitting…';
 
+    const count = parseInt(document.getElementById('reg-party').value);
+    const companions = [];
+    for (let i = 1; i <= count; i++) {
+      companions.push({
+        name:  document.getElementById(`comp-name-${i}`).value.trim(),
+        email: document.getElementById(`comp-email-${i}`).value.trim()
+      });
+    }
+
     const guest = {
       id: Date.now(),
       name:  document.getElementById('reg-name').value.trim(),
       email: document.getElementById('reg-email').value.trim(),
       phone: document.getElementById('reg-phone').value.trim(),
-      party: parseInt(document.getElementById('reg-party').value),
+      party: count + 1, // main guest + companions
+      companions: companions,
       registeredAt: new Date().toLocaleString()
     };
 
     try {
       await fetch(SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
+        method: 'POST', mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(guest)
       });
 
+      // Reset form
       ['reg-name','reg-email','reg-phone'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('reg-party').value = '1';
+      document.getElementById('reg-party').value = '0';
+      document.getElementById('companions-wrap').innerHTML = '';
 
       document.getElementById('toast-msg').textContent =
-        `Thank you, ${guest.name}. ${guest.party > 1 ? `Your group of ${guest.party} has been registered.` : 'Your spot is reserved.'} We look forward to welcoming you.`;
+        `Thank you, ${guest.name}. ${companions.length > 0 ? `You and your ${companions.length} companion${companions.length > 1 ? 's' : ''} have been registered.` : 'Your spot is reserved.'} We look forward to welcoming you.`;
       document.getElementById('toast').classList.add('show');
       setTimeout(() => document.getElementById('toast').classList.remove('show'), 6000);
 

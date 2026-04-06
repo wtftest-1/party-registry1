@@ -76,17 +76,34 @@
   .refresh-btn.spinning { animation:spin 0.6s linear; }
 
   .table-wrap { background:var(--card); border:1px solid var(--border); border-radius:2px; overflow:hidden; }
-  .table-head { display:grid; grid-template-columns:48px 1fr 200px 80px 120px 110px; padding:13px 20px; border-bottom:1px solid var(--border); background:rgba(201,168,76,0.05); }
+  .table-head { display:grid; grid-template-columns:44px 1fr 160px 90px 120px 110px; padding:13px 20px; border-bottom:1px solid var(--border); background:rgba(201,168,76,0.05); }
   .th { font-size:8px; font-weight:700; letter-spacing:0.28em; text-transform:uppercase; color:var(--gold); }
-  .guest-row { display:grid; grid-template-columns:48px 1fr 200px 80px 120px 110px; padding:15px 20px; border-bottom:1px solid rgba(201,168,76,0.07); align-items:center; transition:background 0.15s; }
+
+  .guest-row { border-bottom:1px solid rgba(201,168,76,0.07); transition:background 0.15s; }
   .guest-row:last-child { border-bottom:none; }
   .guest-row:hover { background:rgba(201,168,76,0.03); }
   .guest-row.checked-in { background:rgba(111,207,138,0.03); }
+
+  .guest-main { display:grid; grid-template-columns:44px 1fr 160px 90px 120px 110px; padding:15px 20px; align-items:center; }
+
   .row-num { font-size:11px; color:var(--muted); }
   .guest-name { font-size:14px; font-weight:400; letter-spacing:0.02em; }
   .guest-email { font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .guest-party { font-size:12px; color:var(--muted); }
+  .guest-party-size { font-size:12px; color:var(--muted); }
   .guest-time { font-size:10px; color:var(--muted); letter-spacing:0.02em; line-height:1.6; }
+
+  /* Companions sub-rows */
+  .companions-list { padding: 0 20px 12px 64px; }
+  .companion-item {
+    display: flex; gap: 16px; align-items: center;
+    padding: 6px 0;
+    border-top: 1px solid rgba(201,168,76,0.06);
+    font-size: 11px; color: var(--muted);
+  }
+  .companion-dot { width:5px; height:5px; border-radius:50%; background:var(--gold); opacity:0.4; flex-shrink:0; }
+  .companion-name { color: var(--text); font-size: 12px; min-width: 140px; }
+  .companion-email { font-size: 11px; color: var(--muted); }
+
   .checkin-btn { font-family:'Montserrat',sans-serif; font-size:8px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; padding:7px 12px; border-radius:1px; cursor:pointer; transition:all 0.2s; border:1px solid var(--border); background:none; color:var(--muted); width:90px; text-align:center; }
   .checkin-btn:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-dim); }
   .checkin-btn.in { background:var(--green-dim); border-color:var(--green-border); color:var(--green); }
@@ -94,7 +111,6 @@
   .empty-state { text-align:center; padding:70px 20px; color:var(--muted); }
   .empty-icon { font-size:2.2rem; margin-bottom:14px; }
   .empty-state p { font-size:11px; letter-spacing:0.15em; text-transform:uppercase; }
-
   .loading-state { text-align:center; padding:50px 20px; color:var(--muted); }
   .big-spinner { width:28px; height:28px; border:2px solid var(--border); border-top-color:var(--gold); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 14px; }
   .loading-state p { font-size:10px; letter-spacing:0.2em; text-transform:uppercase; }
@@ -107,7 +123,7 @@
 
   @media (max-width:900px) {
     .stats-row { grid-template-columns:repeat(2,1fr); }
-    .table-head, .guest-row { grid-template-columns:36px 1fr 90px 110px; }
+    .table-head, .guest-main { grid-template-columns:36px 1fr 80px 110px; }
     .th:nth-child(3),.th:nth-child(5),.guest-email,.guest-time { display:none; }
   }
   @media (max-width:560px) { .topbar { padding:14px 18px; } .main { padding:24px 18px 48px; } }
@@ -143,7 +159,7 @@
 
   <div class="main">
     <div class="stats-row">
-      <div class="stat-card"><div class="stat-num" id="stat-total">—</div><div class="stat-label">Registered</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-total">—</div><div class="stat-label">Registrations</div></div>
       <div class="stat-card"><div class="stat-num" id="stat-checked">—</div><div class="stat-label">Checked In</div></div>
       <div class="stat-card"><div class="stat-num" id="stat-pending">—</div><div class="stat-label">Awaiting</div></div>
       <div class="stat-card"><div class="stat-num" id="stat-guests">—</div><div class="stat-label">Total Guests</div></div>
@@ -184,13 +200,12 @@
 
 <script>
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwW4k4nLsPAP-880VN-bQIe5jqeIDZ6TxdOnFi95LnfXSha8IQhoReFCZvzaLzR-kub/exec';
-  const PASSCODE = '6246'; // ← Change this to your desired passcode
+  const PASSCODE = '1234';
 
   let guests = [];
   let filter = 'all';
   let refreshInterval;
 
-  // ── AUTH ──
   function tryLogin() {
     const val = document.getElementById('pwd-input').value;
     const errEl = document.getElementById('login-error');
@@ -201,9 +216,7 @@
       fetchGuests();
       refreshInterval = setInterval(fetchGuests, 15000);
     } else {
-      input.classList.add('invalid');
-      errEl.classList.add('show');
-      input.value = '';
+      input.classList.add('invalid'); errEl.classList.add('show'); input.value = '';
       setTimeout(() => { input.classList.remove('invalid'); errEl.classList.remove('show'); }, 2500);
     }
   }
@@ -216,16 +229,15 @@
     guests = [];
   }
 
-  // ── DATA ──
   async function fetchGuests() {
     const btn = document.getElementById('refresh-btn');
     btn.classList.add('spinning');
     try {
-      const res = await fetch(SCRIPT_URL + '?t=' + Date.now());
+      const res = await fetch(SCRIPT_URL + '?nocache=' + Date.now());
+      if (!res.ok) throw new Error('Bad response');
       const data = await res.json();
       guests = Array.isArray(data) ? data : [];
-      render();
-      updateStats();
+      render(); updateStats();
       document.getElementById('last-refresh').textContent =
         'Updated ' + new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' });
     } catch(e) {
@@ -237,18 +249,21 @@
   async function toggleCheckIn(id) {
     const g = guests.find(g => String(g.ID) === String(id));
     if (!g) return;
-    const newVal = !(g['Checked In'] === true || g['Checked In'] === 'TRUE' || g['Checked In'] === true);
-    g['Checked In'] = newVal;
+    const isIn = isCheckedIn(g);
+    g['Checked In'] = !isIn;
     render(); updateStats();
-
     try {
       await fetch(SCRIPT_URL, {
         method: 'POST', mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'checkIn', id: String(id), checkedIn: newVal })
+        body: JSON.stringify({ action: 'checkIn', id: String(id), checkedIn: !isIn })
       });
       setTimeout(fetchGuests, 1500);
     } catch(e) { console.error('Check-in sync failed', e); }
+  }
+
+  function isCheckedIn(g) {
+    return g['Checked In'] === true || g['Checked In'] === 'TRUE' || g['Checked In'] === 'true';
   }
 
   function setFilter(f) {
@@ -260,12 +275,20 @@
   }
 
   function updateStats() {
-    const checked = guests.filter(g => g['Checked In'] === true || g['Checked In'] === 'TRUE').length;
+    const checked = guests.filter(g => isCheckedIn(g)).length;
     const totalGuests = guests.reduce((s, g) => s + (parseInt(g['Party Size']) || 1), 0);
     document.getElementById('stat-total').textContent   = guests.length;
     document.getElementById('stat-checked').textContent = checked;
     document.getElementById('stat-pending').textContent = guests.length - checked;
     document.getElementById('stat-guests').textContent  = totalGuests;
+  }
+
+  function parseCompanions(g) {
+    try {
+      const raw = g['Companions'] || g['companions'] || '';
+      if (!raw) return [];
+      return typeof raw === 'string' ? JSON.parse(raw) : raw;
+    } catch(e) { return []; }
   }
 
   function render() {
@@ -274,8 +297,7 @@
       const name  = (g.Name  || '').toLowerCase();
       const email = (g.Email || '').toLowerCase();
       const matchQ = !q || name.includes(q) || email.includes(q);
-      const isIn   = g['Checked In'] === true || g['Checked In'] === 'TRUE';
-      const matchF = filter === 'all' || (filter === 'in' && isIn) || (filter === 'pending' && !isIn);
+      const matchF = filter === 'all' || (filter === 'in' && isCheckedIn(g)) || (filter === 'pending' && !isCheckedIn(g));
       return matchQ && matchF;
     });
 
@@ -288,40 +310,56 @@
       body.innerHTML = `<div class="empty-state"><div class="empty-icon">✦</div><p>No registrations yet</p></div>`;
       return;
     }
-
     if (filtered.length === 0) {
       body.innerHTML = `<div class="empty-state"><div class="empty-icon">✦</div><p>No results match your search</p></div>`;
       return;
     }
 
     body.innerHTML = filtered.map((g, i) => {
-      const isIn = g['Checked In'] === true || g['Checked In'] === 'TRUE';
+      const checkedIn = isCheckedIn(g);
       const party = parseInt(g['Party Size']) || 1;
+      const companions = parseCompanions(g);
       const regAt = g['Registered At'] || '—';
+
+      const partyLabel = party === 1 ? '1 guest' : `${party} guests`;
+
+      const companionHTML = companions.length > 0 ? `
+        <div class="companions-list">
+          ${companions.map(c => `
+            <div class="companion-item">
+              <div class="companion-dot"></div>
+              <span class="companion-name">${escHtml(c.name || '—')}</span>
+              <span class="companion-email">${escHtml(c.email || '—')}</span>
+            </div>
+          `).join('')}
+        </div>` : '';
+
       return `
-        <div class="guest-row ${isIn ? 'checked-in' : ''}">
-          <span class="row-num">${i + 1}</span>
-          <span class="guest-name">${escHtml(g.Name || '—')}</span>
-          <span class="guest-email">${escHtml(g.Email || '—')}</span>
-          <span class="guest-party">${party > 1 ? `${party} ppl` : 'Solo'}</span>
-          <span class="guest-time">${escHtml(regAt)}</span>
-          <button class="checkin-btn ${isIn ? 'in' : ''}" onclick="toggleCheckIn('${g.ID}')">
-            ${isIn ? '✓ Checked In' : 'Check In'}
-          </button>
+        <div class="guest-row ${checkedIn ? 'checked-in' : ''}">
+          <div class="guest-main">
+            <span class="row-num">${i + 1}</span>
+            <span class="guest-name">${escHtml(g.Name || '—')}</span>
+            <span class="guest-email">${escHtml(g.Email || '—')}</span>
+            <span class="guest-party-size">${partyLabel}</span>
+            <span class="guest-time">${escHtml(regAt)}</span>
+            <button class="checkin-btn ${checkedIn ? 'in' : ''}" onclick="toggleCheckIn('${g.ID}')">
+              ${checkedIn ? '✓ Checked In' : 'Check In'}
+            </button>
+          </div>
+          ${companionHTML}
         </div>`;
     }).join('');
   }
 
   async function clearAll() {
-    if (!confirm('Permanently delete all guest records from Google Sheets? This cannot be undone.')) return;
+    if (!confirm('Permanently delete all guest records? This cannot be undone.')) return;
     try {
       await fetch(SCRIPT_URL, {
         method: 'POST', mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'clearAll' })
       });
-      guests = [];
-      render(); updateStats();
+      guests = []; render(); updateStats();
     } catch(e) { alert('Failed to clear records. Please try again.'); }
   }
 
