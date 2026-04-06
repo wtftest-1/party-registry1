@@ -25,7 +25,6 @@
   @keyframes spin    { to{transform:rotate(360deg)} }
   @keyframes pulse   { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
 
-  /* LOGIN */
   #login-screen { position:fixed; inset:0; background:var(--black); display:flex; align-items:center; justify-content:center; z-index:100; padding:24px; }
   #login-screen.hidden { display:none; }
   .login-box { background:var(--card); border:1px solid var(--border); border-radius:2px; padding:48px; width:100%; max-width:380px; text-align:center; animation:fadeUp 0.5s ease; }
@@ -41,7 +40,6 @@
   .login-error { font-size:10px; color:#e07070; letter-spacing:0.08em; margin-top:12px; min-height:16px; display:none; }
   .login-error.show { display:block; }
 
-  /* DASHBOARD */
   #dashboard { position:relative; z-index:1; display:none; animation:fadeIn 0.4s ease; }
   #dashboard.visible { display:block; }
 
@@ -83,7 +81,6 @@
   .guest-row:last-child { border-bottom:none; }
   .guest-row:hover { background:rgba(201,168,76,0.03); }
   .guest-row.checked-in { background:rgba(111,207,138,0.03); }
-
   .guest-main { display:grid; grid-template-columns:44px 1fr 160px 90px 120px 110px; padding:15px 20px; align-items:center; }
 
   .row-num { font-size:11px; color:var(--muted); }
@@ -92,17 +89,11 @@
   .guest-party-size { font-size:12px; color:var(--muted); }
   .guest-time { font-size:10px; color:var(--muted); letter-spacing:0.02em; line-height:1.6; }
 
-  /* Companions sub-rows */
   .companions-list { padding: 0 20px 12px 64px; }
-  .companion-item {
-    display: flex; gap: 16px; align-items: center;
-    padding: 6px 0;
-    border-top: 1px solid rgba(201,168,76,0.06);
-    font-size: 11px; color: var(--muted);
-  }
+  .companion-item { display:flex; gap:16px; align-items:center; padding:6px 0; border-top:1px solid rgba(201,168,76,0.06); font-size:11px; color:var(--muted); }
   .companion-dot { width:5px; height:5px; border-radius:50%; background:var(--gold); opacity:0.4; flex-shrink:0; }
-  .companion-name { color: var(--text); font-size: 12px; min-width: 140px; }
-  .companion-email { font-size: 11px; color: var(--muted); }
+  .companion-name { color:var(--text); font-size:12px; min-width:140px; }
+  .companion-email { font-size:11px; color:var(--muted); }
 
   .checkin-btn { font-family:'Montserrat',sans-serif; font-size:8px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; padding:7px 12px; border-radius:1px; cursor:pointer; transition:all 0.2s; border:1px solid var(--border); background:none; color:var(--muted); width:90px; text-align:center; }
   .checkin-btn:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-dim); }
@@ -131,7 +122,6 @@
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
     <span class="login-icon">⬡</span>
@@ -144,7 +134,6 @@
   </div>
 </div>
 
-<!-- DASHBOARD -->
 <div id="dashboard">
   <div class="topbar">
     <div class="topbar-left">
@@ -266,6 +255,14 @@
     return g['Checked In'] === true || g['Checked In'] === 'TRUE' || g['Checked In'] === 'true';
   }
 
+  function getPartySize(g) {
+    // Try Party Size column first, then fall back to counting companions + 1
+    const fromSheet = parseInt(g['Party Size']);
+    if (!isNaN(fromSheet) && fromSheet > 0) return fromSheet;
+    const companions = parseCompanions(g);
+    return companions.length + 1;
+  }
+
   function setFilter(f) {
     filter = f;
     ['all','pending','in'].forEach(k =>
@@ -276,7 +273,8 @@
 
   function updateStats() {
     const checked = guests.filter(g => isCheckedIn(g)).length;
-    const totalGuests = guests.reduce((s, g) => s + (parseInt(g['Party Size']) || 1), 0);
+    // Sum all party sizes correctly
+    const totalGuests = guests.reduce((sum, g) => sum + getPartySize(g), 0);
     document.getElementById('stat-total').textContent   = guests.length;
     document.getElementById('stat-checked').textContent = checked;
     document.getElementById('stat-pending').textContent = guests.length - checked;
@@ -317,10 +315,9 @@
 
     body.innerHTML = filtered.map((g, i) => {
       const checkedIn = isCheckedIn(g);
-      const party = parseInt(g['Party Size']) || 1;
+      const party = getPartySize(g);
       const companions = parseCompanions(g);
       const regAt = g['Registered At'] || '—';
-
       const partyLabel = party === 1 ? '1 guest' : `${party} guests`;
 
       const companionHTML = companions.length > 0 ? `
