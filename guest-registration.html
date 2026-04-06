@@ -28,10 +28,7 @@
   @keyframes fadeDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
   @keyframes fadeUp   { from { opacity:0; transform:translateY(12px);  } to { opacity:1; transform:translateY(0); } }
   @keyframes spin     { to { transform: rotate(360deg); } }
-  .event-label {
-    font-size: 9px; font-weight: 600; letter-spacing: 0.4em; color: var(--gold);
-    text-transform: uppercase; display: block; margin-bottom: 16px;
-  }
+  .event-label { font-size: 9px; font-weight: 600; letter-spacing: 0.4em; color: var(--gold); text-transform: uppercase; display: block; margin-bottom: 16px; }
   h1 { font-family:'Cormorant Garamond',serif; font-size:clamp(2rem,6vw,3.4rem); font-weight:300; letter-spacing:0.06em; line-height:1.15; }
   h1 em { font-style:italic; color:var(--gold-light); }
   .header-line { width:50px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:20px auto 0; }
@@ -40,23 +37,14 @@
   .card-sub { font-size:10px; color:var(--muted); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:36px; }
   .field { margin-bottom:22px; }
   label { display:block; font-size:9px; font-weight:600; letter-spacing:0.25em; text-transform:uppercase; color:var(--gold); margin-bottom:10px; }
-  input, select {
-    width:100%; background:var(--dark); border:1px solid var(--border); border-radius:1px;
-    padding:13px 16px; font-family:'Montserrat',sans-serif; font-size:13px; color:var(--text);
-    outline:none; transition:border-color 0.2s, box-shadow 0.2s; appearance:none;
-  }
+  input, select { width:100%; background:var(--dark); border:1px solid var(--border); border-radius:1px; padding:13px 16px; font-family:'Montserrat',sans-serif; font-size:13px; color:var(--text); outline:none; transition:border-color 0.2s, box-shadow 0.2s; appearance:none; }
   input::placeholder { color:var(--muted); }
   input:focus, select:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(201,168,76,0.08); }
   input.invalid { border-color:rgba(200,80,80,0.5); }
   .field-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   .field-error { font-size:10px; color:#e07070; letter-spacing:0.05em; margin-top:6px; display:none; }
   .field-error.show { display:block; }
-  .btn-submit {
-    width:100%; padding:15px; background:var(--gold); color:var(--black); border:none; border-radius:1px;
-    font-family:'Montserrat',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.32em;
-    text-transform:uppercase; cursor:pointer; margin-top:8px; transition:all 0.2s;
-    display:flex; align-items:center; justify-content:center; gap:10px;
-  }
+  .btn-submit { width:100%; padding:15px; background:var(--gold); color:var(--black); border:none; border-radius:1px; font-family:'Montserrat',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.32em; text-transform:uppercase; cursor:pointer; margin-top:8px; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:10px; }
   .btn-submit:hover:not(:disabled) { background:var(--gold-light); transform:translateY(-1px); }
   .btn-submit:disabled { opacity:0.6; cursor:not-allowed; }
   .spinner { width:14px; height:14px; border:2px solid rgba(0,0,0,0.3); border-top-color:var(--black); border-radius:50%; animation:spin 0.7s linear infinite; display:none; }
@@ -132,7 +120,7 @@
 </div>
 
 <script>
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlITBlVboF1t-HHvH8WngECIFg4qw_DY1aczXKKA1GNaIL5K6f6dMTWq-KoC2uboMl/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwW4k4nLsPAP-880VN-bQIe5jqeIDZ6TxdOnFi95LnfXSha8IQhoReFCZvzaLzR-kub/exec';
 
   function validate() {
     let ok = true;
@@ -141,13 +129,11 @@
     if (!name.value.trim() || name.value.trim().length < 2) {
       name.classList.add('invalid'); errName.classList.add('show'); ok = false;
     } else { name.classList.remove('invalid'); errName.classList.remove('show'); }
-
     const email = document.getElementById('reg-email');
     const errEmail = document.getElementById('err-email');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
       email.classList.add('invalid'); errEmail.classList.add('show'); ok = false;
     } else { email.classList.remove('invalid'); errEmail.classList.remove('show'); }
-
     return ok;
   }
 
@@ -169,7 +155,8 @@
 
     try {
       await fetch(SCRIPT_URL, {
-        method: 'POST', mode: 'no-cors',
+        method: 'POST',
+        mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(guest)
       });
