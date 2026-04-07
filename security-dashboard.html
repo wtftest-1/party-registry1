@@ -67,13 +67,13 @@
   .refresh-btn:hover { border-color:var(--gold); color:var(--gold); }
   .refresh-btn.spinning { animation:spin 0.6s linear; }
   .table-wrap { background:var(--card); border:1px solid var(--border); border-radius:2px; overflow:hidden; }
-  .table-head { display:grid; grid-template-columns:44px 1fr 160px 80px 120px 180px; padding:13px 20px; border-bottom:1px solid var(--border); background:rgba(200,168,75,0.05); }
+  .table-head { display:grid; grid-template-columns:44px 1fr 160px 80px 120px 90px 180px; padding:13px 20px; border-bottom:1px solid var(--border); background:rgba(200,168,75,0.05); }
   .th { font-size:8px; font-weight:700; letter-spacing:0.28em; text-transform:uppercase; color:var(--gold); }
   .guest-row { border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.15s; }
   .guest-row:last-child { border-bottom:none; }
   .guest-row:hover { background:rgba(255,255,255,0.02); }
   .guest-row.checked-in { background:rgba(111,207,138,0.03); }
-  .guest-main { display:grid; grid-template-columns:44px 1fr 160px 80px 120px 180px; padding:15px 20px; align-items:center; }
+  .guest-main { display:grid; grid-template-columns:44px 1fr 160px 80px 120px 90px 180px; padding:15px 20px; align-items:center; }
   .row-num { font-size:11px; color:var(--muted); }
   .guest-name { font-size:14px; font-weight:400; color:#fff; }
   .guest-email { font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -103,6 +103,11 @@
   .clear-btn:hover { border-color:rgba(220,80,80,0.6); color:rgba(220,80,80,0.9); }
   @media (max-width:900px) { .stats-row{grid-template-columns:repeat(2,1fr);} .table-head,.guest-main{grid-template-columns:36px 1fr 80px 160px;} .th:nth-child(3),.th:nth-child(5),.guest-email,.guest-time{display:none;} }
   @media (max-width:560px) { .topbar{padding:12px 18px;} .main{padding:24px 18px 48px;} }
+
+  .pay-btn { font-family:'Montserrat',sans-serif; font-size:8px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; padding:7px 10px; border-radius:2px; cursor:pointer; transition:all 0.2s; border:1px solid var(--border); background:none; color:var(--muted); white-space:nowrap; }
+  .pay-btn:hover { border-color:var(--gold); color:var(--gold); }
+  .pay-btn.cash { background:rgba(200,168,75,0.12); border-color:var(--gold); color:var(--gold); }
+  .pay-btn.card { background:rgba(111,207,138,0.12); border-color:var(--green-border); color:var(--green); }
 </style>
 </head>
 <body>
@@ -150,6 +155,7 @@
         <div class="th">Email</div>
         <div class="th">Party</div>
         <div class="th">Registered</div>
+        <div class="th">Payment</div>
         <div class="th">Actions</div>
       </div>
       <div id="guest-list-body"><div class="loading-state"><div class="big-spinner"></div><p>Loading guests…</p></div></div>
@@ -330,6 +336,17 @@ async function clearAll() {
     await fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'clearAll'})});
     guests = []; render(); updateStats();
   } catch(e) { alert('Failed to clear records.'); }
+}
+
+async function updatePayment(id, current) {
+  const states = ['unpaid', 'cash', 'card'];
+  const next = states[(states.indexOf(current) + 1) % states.length];
+  const g = guests.find(g => String(g.ID) === String(id));
+  if (g) g['Payment'] = next;
+  render(); 
+  try {
+    await fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updatePayment',id:String(id),payment:next})});
+  } catch(e) {}
 }
 
 function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
