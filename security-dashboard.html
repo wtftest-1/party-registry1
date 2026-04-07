@@ -199,7 +199,7 @@ function tryLogin() {
     document.getElementById("login-screen").classList.add("hidden");
     document.getElementById("dashboard").classList.add("visible");
     fetchGuests();
-    refreshInterval = setInterval(fetchGuests, 15000);
+    refreshInterval = setInterval(fetchGuests, 30000);
   } else {
     input.classList.add("invalid");
     errEl.classList.add("show");
@@ -239,14 +239,29 @@ function toggleCheckIn(id) {
   var g = guests.find(function(g) { return String(g.ID) === String(id); });
   if (!g) return;
   var isIn = isCheckedIn(g);
-  g["Checked In"] = !isIn;
+  var newVal = !isIn;
+  g["Checked In"] = newVal;
+  // Store as TRUE/FALSE string to match what sheet returns
+  g["Checked In"] = newVal ? "TRUE" : "FALSE";
   render();
   updateStats();
   fetch(SCRIPT_URL, {
     method: "POST", mode: "no-cors",
     headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({action: "checkIn", id: String(id), checkedIn: !isIn})
-  }).then(function() { setTimeout(fetchGuests, 3000); }).catch(function() {});
+    body: JSON.stringify({action: "checkIn", id: String(id), checkedIn: newVal})
+  }).catch(function() {});
+  // Refresh after 5 seconds but preserve checked state
+  setTimeout(function() {
+    fetch(SCRIPT_URL + "?nocache=" + Date.now())
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (Array.isArray(data)) {
+          guests = data;
+          render();
+          updateStats();
+        }
+      }).catch(function() {});
+  }, 5000);
 }
 
 function updatePayment(id, current) {
