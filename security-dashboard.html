@@ -99,6 +99,24 @@ body::before { content:""; position:fixed; inset:0; background:radial-gradient(e
 .clear-btn:hover { border-color:rgba(220,80,80,0.6); color:rgba(220,80,80,0.9); }
 @media (max-width:1000px) { .stats-row{grid-template-columns:repeat(2,1fr);} .table-head,.guest-main{grid-template-columns:36px 1fr 70px 90px 190px;} .th:nth-child(3),.th:nth-child(5),.guest-email,.guest-time{display:none;} }
 @media (max-width:560px) { .topbar{padding:12px 18px;} .main{padding:24px 18px 48px;} }
+
+  .add-btn { background:var(--gold); border:none; color:#000; font-size:9px; font-weight:700; letter-spacing:0.25em; text-transform:uppercase; padding:12px 18px; border-radius:2px; cursor:pointer; font-family:Montserrat,sans-serif; transition:background 0.2s; white-space:nowrap; }
+  .add-btn:hover { background:var(--gold-light); }
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; align-items:center; justify-content:center; padding:24px; }
+  .modal-overlay.visible { display:flex; }
+  .modal { background:var(--card); border:1px solid var(--border); border-radius:3px; padding:36px; width:100%; max-width:440px; animation:fadeUp 0.3s ease; }
+  .modal-title { font-family:Cormorant Garamond,serif; font-size:1.4rem; font-weight:300; letter-spacing:0.04em; margin-bottom:6px; }
+  .modal-sub { font-size:10px; color:var(--muted); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:28px; }
+  .modal .field { margin-bottom:18px; }
+  .modal label { display:block; font-size:9px; font-weight:600; letter-spacing:0.25em; text-transform:uppercase; color:var(--gold); margin-bottom:8px; }
+  .modal input { width:100%; background:var(--dark); border:1px solid var(--border); border-radius:2px; padding:12px 14px; font-family:Montserrat,sans-serif; font-size:13px; color:#fff; outline:none; transition:border-color 0.2s; appearance:none; }
+  .modal input:focus { border-color:var(--gold); }
+  .modal input.invalid { border-color:rgba(220,80,80,0.5); }
+  .modal-actions { display:flex; gap:12px; margin-top:24px; }
+  .modal-confirm { flex:1; padding:13px; background:var(--gold); color:#000; border:none; border-radius:2px; font-family:Montserrat,sans-serif; font-size:9px; font-weight:700; letter-spacing:0.3em; text-transform:uppercase; cursor:pointer; transition:background 0.2s; }
+  .modal-confirm:hover { background:var(--gold-light); }
+  .modal-cancel { flex:1; padding:13px; background:none; color:var(--muted); border:1px solid var(--border); border-radius:2px; font-family:Montserrat,sans-serif; font-size:9px; font-weight:700; letter-spacing:0.3em; text-transform:uppercase; cursor:pointer; transition:all 0.2s; }
+  .modal-cancel:hover { border-color:var(--gold); color:var(--gold); }
 </style>
 </head>
 <body>
@@ -138,6 +156,7 @@ body::before { content:""; position:fixed; inset:0; background:radial-gradient(e
       <button class="filter-btn" id="filter-pending">Awaiting</button>
       <button class="filter-btn" id="filter-in">Checked In</button>
       <button class="refresh-btn" id="refresh-btn">&#8635;</button>
+      <button class="add-btn" id="add-guest-btn">+ Add Guest</button>
     </div>
     <div class="table-wrap">
       <div class="table-head">
@@ -176,6 +195,20 @@ document.getElementById("filter-all").addEventListener("click", function() { set
 document.getElementById("filter-pending").addEventListener("click", function() { setFilter("pending"); });
 document.getElementById("filter-in").addEventListener("click", function() { setFilter("in"); });
 document.getElementById("clear-btn").addEventListener("click", clearAll);
+document.getElementById("add-guest-btn").addEventListener("click", function() {
+  document.getElementById("add-name").value = "";
+  document.getElementById("add-email").value = "";
+  document.getElementById("add-phone").value = "";
+  document.getElementById("add-name").classList.remove("invalid");
+  document.getElementById("add-modal").classList.add("visible");
+});
+document.getElementById("modal-cancel").addEventListener("click", function() {
+  document.getElementById("add-modal").classList.remove("visible");
+});
+document.getElementById("modal-confirm").addEventListener("click", addGuestManually);
+document.getElementById("add-modal").addEventListener("click", function(e) {
+  if (e.target === this) this.classList.remove("visible");
+});
 
 // Use event delegation for dynamic buttons
 document.getElementById("guest-list-body").addEventListener("click", function(e) {
@@ -222,7 +255,18 @@ function fetchGuests() {
   fetch(SCRIPT_URL + "?nocache=" + Date.now())
     .then(function(res) { return res.json(); })
     .then(function(data) {
-      guests = Array.isArray(data) ? data : [];
+      if (!Array.isArray(data)) return;
+      // Preserve local checked-in state in case sheet hasn't updated yet
+      var localCheckedIds = {};
+      guests.forEach(function(g) {
+        if (isCheckedIn(g)) localCheckedIds[String(g.ID)] = true;
+      });
+      guests = data;
+      guests.forEach(function(g) {
+        if (localCheckedIds[String(g.ID)]) {
+          g["Checked In"] = "TRUE";
+        }
+      });
       render();
       updateStats();
       document.getElementById("last-refresh").textContent = "Updated " + new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});
@@ -250,18 +294,6 @@ function toggleCheckIn(id) {
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({action: "checkIn", id: String(id), checkedIn: newVal})
   }).catch(function() {});
-  // Refresh after 5 seconds but preserve checked state
-  setTimeout(function() {
-    fetch(SCRIPT_URL + "?nocache=" + Date.now())
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        if (Array.isArray(data)) {
-          guests = data;
-          render();
-          updateStats();
-        }
-      }).catch(function() {});
-  }, 5000);
 }
 
 function updatePayment(id, current) {
@@ -307,7 +339,7 @@ function removeCompanion(guestId, companionIndex) {
   }).then(function() { setTimeout(fetchGuests, 2000); }).catch(function() {});
 }
 
-function isCheckedIn(g) { return g["Checked In"] === true || g["Checked In"] === "TRUE" || g["Checked In"] === "true"; }
+function isCheckedIn(g) { var v = g["Checked In"]; return v === true || v === "TRUE" || v === "true" || v === 1 || v === "1"; }
 function getPartySize(g) { var v = parseInt(g["Party Size"]); return (!isNaN(v) && v > 0) ? v : (parseCompanions(g).length + 1); }
 function parseCompanions(g) { try { var r = g["Companions"] || g["companions"] || ""; if (!r) return []; return typeof r === "string" ? JSON.parse(r) : r; } catch(e) { return []; } }
 function setFilter(f) { currentFilter = f; ["all","pending","in"].forEach(function(k) { document.getElementById("filter-" + k).classList.toggle("active", k === f); }); render(); }
@@ -388,9 +420,77 @@ function clearAll() {
   }).then(function() { guests = []; render(); updateStats(); }).catch(function() { alert("Failed."); });
 }
 
+function addGuestManually() {
+  var name = document.getElementById("add-name").value.trim();
+  var email = document.getElementById("add-email").value.trim();
+  var phone = document.getElementById("add-phone").value.trim();
+  var nameInput = document.getElementById("add-name");
+  if (!name || name.length < 2) {
+    nameInput.classList.add("invalid");
+    return;
+  }
+  nameInput.classList.remove("invalid");
+  var guest = {
+    id: Date.now(),
+    name: name,
+    email: email || "-",
+    phone: phone,
+    party: 1,
+    companions: [],
+    registeredAt: new Date().toLocaleString()
+  };
+  // Add to local list immediately
+  var localGuest = {
+    "ID": String(guest.id),
+    "Name": guest.name,
+    "Email": guest.email,
+    "Phone": guest.phone,
+    "Party Size": 1,
+    "Checked In": "FALSE",
+    "Registered At": guest.registeredAt,
+    "Companions": "[]",
+    "Payment": "unpaid"
+  };
+  guests.push(localGuest);
+  render();
+  updateStats();
+  document.getElementById("add-modal").classList.remove("visible");
+  // Save to sheet
+  fetch(SCRIPT_URL, {
+    method: "POST", mode: "no-cors",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(guest)
+  }).then(function() {
+    setTimeout(fetchGuests, 3000);
+  }).catch(function() {});
+}
+
 function escHtml(s) {
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 </script>
+
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-title">Add Guest Manually</div>
+    <div class="modal-sub">Add a walk-in guest to the list</div>
+    <div class="field">
+      <label>Full Name *</label>
+      <input type="text" id="add-name" placeholder="First and last name">
+    </div>
+    <div class="field">
+      <label>Email Address</label>
+      <input type="email" id="add-email" placeholder="guest@email.com">
+    </div>
+    <div class="field">
+      <label>Phone Number</label>
+      <input type="tel" id="add-phone" placeholder="+352 000 000 000">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="modal-cancel">Cancel</button>
+      <button class="modal-confirm" id="modal-confirm">Add to List</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
